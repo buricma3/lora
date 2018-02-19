@@ -138,7 +138,6 @@ void HW_Init( void )
     
     vcom_Init( );
     
-    BSP_sensor_Init( );
 
     McuInitialized = true;
   }

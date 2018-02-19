@@ -44,7 +44,7 @@ all: sx1272mb2das.elf
 sx1272mb2das.elf: $(OBJS) $(USER_OBJS) ../STM32L073RZTx_FLASH.ld
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU GCC Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m0plus -mthumb -mfloat-abi=soft -specs=nosys.specs -specs=nano.specs -T"../STM32L073RZTx_FLASH.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "sx1272mb2das.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
+	arm-none-eabi-gcc -mcpu=cortex-m0plus -mthumb -mfloat-abi=soft -L"C:\Users\matula\Documents\GitHub\diplomka\STM32CubeExpansion_LRWAN_V1.1.2\Drivers\CMSIS\Lib\GCC" -specs=nosys.specs -specs=nano.specs -T"../STM32L073RZTx_FLASH.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "sx1272mb2das.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build

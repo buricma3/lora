@@ -6,7 +6,9 @@
 #include "lora.h"
 #include "timeServer.h"
 #include "vcom.h"
-//#include "arm_math.h"
+#include "arm_math.h"
+#include <stdint.h>
+#include <string.h>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -15,9 +17,6 @@ ADC_HandleTypeDef 				 hadc;
 extern DMA_HandleTypeDef         DmaHandle;
 extern TIM_HandleTypeDef         htim2;
 #define sizeOfArray  2000
-static uint16_t adc_values[sizeOfArray];
-static float adc_values_abs[sizeOfArray];
-static float adc_values_float[sizeOfArray];
 int counter = 0;
 
 #define MEAS_INTERVAL_MS							( 1*10*1000) //every 3*60 second
@@ -82,58 +81,78 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
                                     JOINREQ_NBTRIALS};
 
 /* Private functions ---------------------------------------------------------*/
-
+union {
+	uint16_t adc_values[sizeOfArray];
+	float flt[sizeOfArray];
+	float absolute[sizeOfArray];
+} samples;
 static volatile bool dma_done = false;
 static void done_cb(DMA_HandleTypeDef* dh)
 {
+	uint16_t a = 0;
+	int b = 0;
 	DISABLE_IRQ( );
 	dma_done = true;
 	PRINTF("dma handler\n\r");
 	counter++;
-	ENABLE_IRQ();
+	int i;
+	for(i=0; i < sizeOfArray; i++)
+	{
+		a = samples.adc_values[i];
+		a = a + 1;
+		b += a;
+	}
 
-	//compute_crest();
+	ENABLE_IRQ();
+	compute_crest(a, b);
 
 }
 
-/*
-void compute_crest()
+
+
+void compute_crest(int a, int b)
 {
 
 	for (int i=0; i < sizeOfArray; i++) {
-		adc_values_float[i] = (float)adc_values[i];
+		samples.flt[i] = (float)samples.adc_values[i];
 	}
 
 	float mean;
-	arm_mean_f32(adc_values_float, sizeOfArray, &mean);
+	arm_mean_f32(samples.flt, sizeOfArray, &mean);
+
 	for (int i = 0; i < sizeOfArray; i++) {
-		adc_values[i] -= mean;
+		samples.flt[i] -= mean;
 	}
 
-	PRINTF("mean: %.6f\n\r", mean);
+	char buf[1000];
+	sprintf(buf, "hodnota: %u, mean: %d\n\r", samples.adc_values[1],  (int)mean);
+	PRINTF(buf);
+	//PRINTF("mean: %.6f\n\r", mean);
+
+
 	//rms - efektivni hodnota
 
 	float rms;
-	arm_rms_f32(adc_values_float, sizeOfArray, &rms);
+	arm_rms_f32(samples.flt, sizeOfArray, &rms);
 
 
 	// absolute value of each element
-	arm_abs_f32(adc_values_float, adc_values_abs, sizeOfArray);
+	arm_abs_f32(samples.flt, samples.absolute, sizeOfArray);
 
 	// peak
 	float max;
 	uint32_t indexMax;
-	arm_max_f32(adc_values_abs, sizeOfArray, &max, &indexMax);
+	arm_max_f32(samples.absolute, sizeOfArray, &max, &indexMax);
 
 	// crest
 	float crest = max/rms;
 
 
-}*/
+}
 
 static void MeasurementStartTimerIrq(void)
 {
-	GPIOC->BSRR = 1<<7;
+	//GPIOC->BSRR = 1<<7;
 
 	PRINTF("measure\n\r");
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
@@ -142,25 +161,24 @@ static void MeasurementStartTimerIrq(void)
 	measure();
 
 	PRINTF("measure done \n\r");
+	//GPIOC->BRR = 1<<7;
 
-	GPIOC->BRR = 1<<7;
 }
 
 
 void measure()
 {
-	dma_done = false;
-	if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)adc_values, sizeOfArray) != HAL_OK)
+	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
 	{
 		Error_Handler();
 	}
 	DmaHandle.XferCpltCallback = done_cb;
+	dma_done = false;
 
+	/*HAL_TIM_Base_Start(&htim2);
 
-	//HAL_TIM_Base_Start(&htim2);
-
-	/*while(!dma_done) {
-		//HAL_Delay(100);
+	while(!dma_done) {
+		HAL_Delay(100);
 		PRINTF("waiting...\n\r ");
 	}*/
 
@@ -280,9 +298,7 @@ static void MX_ADC_Init(void)
 
 static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 {
-
 	uint32_t i = 0;
-
 
     TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
     TimerReset(&MeasurementStartTimer);
@@ -314,44 +330,6 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 
 static void LoraRxData( lora_AppData_t *AppData )
 {
-  switch (AppData->Port)
-  {
-  case LORAWAN_APP_PORT:
-    if( AppData->BuffSize == 1 )
-    {
-      AppLedStateOn = AppData->Buff[0] & 0x01;
-      if ( AppLedStateOn == RESET )
-      {
-        PRINTF("LED OFF\n\r");
-        LED_Off( LED_BLUE ) ; 
-        
-      }
-      else
-      {
-        PRINTF("LED ON\n\r");
-        LED_On( LED_BLUE ) ; 
-      }
-      //GpioWrite( &Led3, ( ( AppLedStateOn & 0x01 ) != 0 ) ? 0 : 1 );
-    }
-    break;
-  case LPP_APP_PORT:
-  {
-    AppLedStateOn= (AppData->Buff[2] == 100) ?  0x01 : 0x00;
-      if ( AppLedStateOn == RESET )
-      {
-        PRINTF("LED OFF\n\r");
-        LED_Off( LED_BLUE ) ; 
-        
-      }
-      else
-      {
-        PRINTF("LED ON\n\r");
-        LED_On( LED_BLUE ) ; 
-      }
-    break;
-  }
-  default:
-    break;
-  }
+	PRINTF("RX data\n\r");
 }
 

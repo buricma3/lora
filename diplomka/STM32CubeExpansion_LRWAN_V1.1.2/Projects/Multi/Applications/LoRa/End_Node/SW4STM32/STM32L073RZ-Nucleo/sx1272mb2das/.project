@@ -126,11 +126,6 @@
 			<locationURI>PARENT-8-PROJECT_LOC/Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_uart_ex.c</locationURI>
 		</link>
 		<link>
-			<name>Projects/End_Node/bsp.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/src/bsp.c</locationURI>
-		</link>
-		<link>
 			<name>Projects/End_Node/debug.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/src/debug.c</locationURI>
@@ -221,54 +216,9 @@
 			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/Components/sx1276/sx1276.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/BSP/LRWAN_NS1/lrwan_ns1.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/LRWAN_NS1/lrwan_ns1.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/LRWAN_NS1/lrwan_ns1_humidity.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/LRWAN_NS1/lrwan_ns1_humidity.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/LRWAN_NS1/lrwan_ns1_pressure.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/LRWAN_NS1/lrwan_ns1_pressure.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/LRWAN_NS1/lrwan_ns1_temperature.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/LRWAN_NS1/lrwan_ns1_temperature.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/LRWAN_NS1/sx1276_lrwan_ns1.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/LRWAN_NS1/sx1276_lrwan_ns1.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/BSP/STM32L0xx_Nucleo/stm32l0xx_nucleo.c</name>
 			<type>1</type>
 			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/STM32L0xx_Nucleo/stm32l0xx_nucleo.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_humidity.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_humidity.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_pressure.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_pressure.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_temperature.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/X_NUCLEO_IKS01A1/x_nucleo_iks01a1_temperature.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/BSP/X_NUCLEO_IKS01A2/x_nucleo_iks01a2.c</name>
@@ -294,16 +244,6 @@
 			<name>Drivers/BSP/sx1272mb2das/sx1272mb2das.c</name>
 			<type>1</type>
 			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/sx1272mb2das/sx1272mb2das.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/sx1276mb1las/sx1276mb1las.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/sx1276mb1las/sx1276mb1las.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/sx1276mb1mas/sx1276mb1mas.c</name>
-			<type>1</type>
-			<locationURI>PARENT-8-PROJECT_LOC/Drivers/BSP/sx1276mb1mas/sx1276mb1mas.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/Lora/Core/lora.c</name>

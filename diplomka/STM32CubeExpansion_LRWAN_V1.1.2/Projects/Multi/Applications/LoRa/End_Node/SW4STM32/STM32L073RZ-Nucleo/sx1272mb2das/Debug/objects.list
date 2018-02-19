@@ -51,7 +51,6 @@
 "Middlewares/Lora/Utilities/low_power.o"
 "Middlewares/Lora/Utilities/timeServer.o"
 "Middlewares/Lora/Utilities/utilities.o"
-"Projects/End_Node/bsp.o"
 "Projects/End_Node/debug.o"
 "Projects/End_Node/hw_gpio.o"
 "Projects/End_Node/hw_rtc.o"
