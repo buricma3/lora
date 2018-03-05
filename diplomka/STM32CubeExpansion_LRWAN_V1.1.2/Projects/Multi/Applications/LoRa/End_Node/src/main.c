@@ -95,31 +95,32 @@ static void done_cb(DMA_HandleTypeDef* dh)
 	dma_done = true;
 	PRINTF("dma handler\n\r");
 	counter++;
-	int i;
-	for(i=0; i < sizeOfArray; i++)
-	{
-		a = samples.adc_values[i];
-		a = a + 1;
-		b += a;
-	}
 
 	ENABLE_IRQ();
-	compute_crest(a, b);
+	compute_crest();
 
 }
 
 
-
-void compute_crest(int a, int b)
+union {
+	uint16_t a[10];
+	float b[20];
+} pokus;
+void compute_crest()
 {
 
-	for (int i=0; i < sizeOfArray; i++) {
+	for (int i=sizeOfArray-1; i >= 0; i--) {
 		samples.flt[i] = (float)samples.adc_values[i];
 	}
 
 	float mean;
 	arm_mean_f32(samples.flt, sizeOfArray, &mean);
 
+	char buf[1000];
+	sprintf(buf, "mean: %d\n\r", (int)mean);
+	PRINTF(buf);
+
+/*
 	for (int i = 0; i < sizeOfArray; i++) {
 		samples.flt[i] -= mean;
 	}
@@ -145,7 +146,7 @@ void compute_crest(int a, int b)
 	arm_max_f32(samples.absolute, sizeOfArray, &max, &indexMax);
 
 	// crest
-	float crest = max/rms;
+	float crest = max/rms;*/
 
 
 }
