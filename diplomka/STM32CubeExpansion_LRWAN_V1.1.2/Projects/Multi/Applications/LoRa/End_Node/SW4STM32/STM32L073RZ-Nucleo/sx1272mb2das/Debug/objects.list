@@ -55,6 +55,7 @@
 "Projects/End_Node/hw_gpio.o"
 "Projects/End_Node/hw_rtc.o"
 "Projects/End_Node/hw_spi.o"
+"Projects/End_Node/kurtogram.o"
 "Projects/End_Node/main.o"
 "Projects/End_Node/stm32l0xx_hal_msp.o"
 "Projects/End_Node/stm32l0xx_hw.o"

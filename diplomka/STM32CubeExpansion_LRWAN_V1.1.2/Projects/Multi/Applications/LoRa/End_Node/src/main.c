@@ -7,6 +7,7 @@
 #include "timeServer.h"
 #include "vcom.h"
 #include "arm_math.h"
+#include "kurtogram.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -15,9 +16,18 @@
 static TimerEvent_t MeasurementStartTimer;
 ADC_HandleTypeDef 				 hadc;
 extern DMA_HandleTypeDef         DmaHandle;
-extern TIM_HandleTypeDef         htim2;
-#define sizeOfArray  2000
 int counter = 0;
+int sizeOfArray = 2000;
+
+extern union {
+	uint16_t *adc_values;
+	float *flt;
+} samples;
+/*
+union {
+	uint16_t adc_values[2000];
+	float flt[2000];
+} samples;*/
 
 #define MEAS_INTERVAL_MS							( 1*10*1000) //every 3*60 second
 #define LPP_APP_PORT 99
@@ -47,7 +57,6 @@ int counter = 0;
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-void measure();
 void compute_crest();
 static void MX_ADC_Init(void);
 /* call back when LoRa will transmit a frame*/
@@ -64,10 +73,6 @@ static LoRaMainCallback_t LoRaMainCallbacks ={ HW_GetBatteryLevel,
                                                LoraTxData,
                                                LoraRxData};
 
-/*!
- * Specifies the state of the application LED
- */
-static uint8_t AppLedStateOn = RESET;
 
 /* !
  *Initialises the Lora Parameters
@@ -81,34 +86,23 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
                                     JOINREQ_NBTRIALS};
 
 /* Private functions ---------------------------------------------------------*/
-union {
-	uint16_t adc_values[sizeOfArray];
-	float flt[sizeOfArray];
-	float absolute[sizeOfArray];
-} samples;
-static volatile bool dma_done = false;
+
+//static volatile bool dma_done = false;
 static void done_cb(DMA_HandleTypeDef* dh)
 {
-	uint16_t a = 0;
-	int b = 0;
 	DISABLE_IRQ( );
-	dma_done = true;
-	PRINTF("dma handler\n\r");
-	counter++;
-
+	//dma_done = true;
+	//PRINTF("dma handler\n\r");
+	kurtogram();
+	//compute_crest();
 	ENABLE_IRQ();
-	compute_crest();
-
 }
 
 
-union {
-	uint16_t a[10];
-	float b[20];
-} pokus;
+
 void compute_crest()
 {
-
+	PRINTF("crest\n\r");
 	for (int i=sizeOfArray-1; i >= 0; i--) {
 		samples.flt[i] = (float)samples.adc_values[i];
 	}
@@ -120,11 +114,11 @@ void compute_crest()
 	sprintf(buf, "mean: %d\n\r", (int)mean);
 	PRINTF(buf);
 
-/*
+
 	for (int i = 0; i < sizeOfArray; i++) {
 		samples.flt[i] -= mean;
 	}
-
+/*
 	char buf[1000];
 	sprintf(buf, "hodnota: %u, mean: %d\n\r", samples.adc_values[1],  (int)mean);
 	PRINTF(buf);
@@ -158,8 +152,12 @@ static void MeasurementStartTimerIrq(void)
 	PRINTF("measure\n\r");
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
 	TimerReset(&MeasurementStartTimer);
-
-	measure();
+	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	DmaHandle.XferCpltCallback = done_cb;
+	//dma_done = false;
 
 	PRINTF("measure done \n\r");
 	//GPIOC->BRR = 1<<7;
@@ -167,24 +165,6 @@ static void MeasurementStartTimerIrq(void)
 }
 
 
-void measure()
-{
-	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	DmaHandle.XferCpltCallback = done_cb;
-	dma_done = false;
-
-	/*HAL_TIM_Base_Start(&htim2);
-
-	while(!dma_done) {
-		HAL_Delay(100);
-		PRINTF("waiting...\n\r ");
-	}*/
-
-
-}
 
 /**
   * @brief  Main program
@@ -287,13 +267,6 @@ static void MX_ADC_Init(void)
 	    Error_Handler();
 	  }
 
-	  // ### - 4 - Start conversion in DMA mode #################################
-	 /* if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)adc_values, sizeOfArray) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-
-	  DmaHandle.XferCpltCallback = done_cb;*/
 
 }
 
@@ -308,8 +281,8 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
   
     *IsTxConfirmed =  LORAWAN_CONFIRMED_MSG;
 
-    AppData->Buff[i++] = counter & 0xFF;
-    AppData->Buff[i++] = (counter & 0xFF00)<<8;
+    AppData->Buff[i++] = 0x00;
+    AppData->Buff[i++] = 0x00;
     AppData->Buff[i++] = 0x00;
     AppData->Buff[i++] = 0x00;
     AppData->Buff[i++] = 0x00;

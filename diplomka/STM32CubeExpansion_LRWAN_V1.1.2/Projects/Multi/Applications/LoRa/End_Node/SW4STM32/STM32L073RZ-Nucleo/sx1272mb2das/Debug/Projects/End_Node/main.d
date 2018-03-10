@@ -56,7 +56,8 @@ Projects/End_Node/main.o: \
  C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Utilities/utilities.h \
  C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/inc/vcom.h \
  C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include/arm_math.h \
- C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include/core_cm0plus.h
+ C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include/core_cm0plus.h \
+ C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/inc/kurtogram.h
 
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/inc/hw.h:
 
@@ -171,3 +172,5 @@ C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projec
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include/arm_math.h:
 
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include/core_cm0plus.h:
+
+C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/inc/kurtogram.h:

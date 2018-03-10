@@ -8,6 +8,7 @@ C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projec
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/hw_gpio.c \
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/hw_rtc.c \
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/hw_spi.c \
+../Projects/End_Node/kurtogram.c \
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/main.c \
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/stm32l0xx_hal_msp.c \
 C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/stm32l0xx_hw.c \
@@ -19,6 +20,7 @@ OBJS += \
 ./Projects/End_Node/hw_gpio.o \
 ./Projects/End_Node/hw_rtc.o \
 ./Projects/End_Node/hw_spi.o \
+./Projects/End_Node/kurtogram.o \
 ./Projects/End_Node/main.o \
 ./Projects/End_Node/stm32l0xx_hal_msp.o \
 ./Projects/End_Node/stm32l0xx_hw.o \
@@ -30,6 +32,7 @@ C_DEPS += \
 ./Projects/End_Node/hw_gpio.d \
 ./Projects/End_Node/hw_rtc.d \
 ./Projects/End_Node/hw_spi.d \
+./Projects/End_Node/kurtogram.d \
 ./Projects/End_Node/main.d \
 ./Projects/End_Node/stm32l0xx_hal_msp.d \
 ./Projects/End_Node/stm32l0xx_hw.d \
@@ -63,6 +66,14 @@ Projects/End_Node/hw_rtc.o: C:/Users/matula/Documents/GitHub/diplomka/STM32CubeE
 	@echo ' '
 
 Projects/End_Node/hw_spi.o: C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/src/hw_spi.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU GCC Compiler'
+	@echo $(PWD)
+	arm-none-eabi-gcc -mcpu=cortex-m0plus -mthumb -mfloat-abi=soft -DSTM32L073xx '-D__packed="__attribute__((__packed__))"' '-D__weak=__attribute__((weak))' '-DARM_MATH_CM0PLUS=1' '-DNOOO_ARM_MATH_CM0=1' -DUSE_STM32L0XX_NUCLEO -DUSE_HAL_DRIVER -DREGION_EU868 -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Projects/Multi/Applications/LoRa/End_Node/inc" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/STM32L0xx_Nucleo" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/STM32L0xx_HAL_Driver/Inc" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Device/ST/STM32L0xx/Include" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/CMSIS/Include" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Crypto" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Mac" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Phy" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Utilities" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Middlewares/Third_Party/Lora/Core" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/Components/Common" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/Components/hts221" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/Components/lps22hb" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/Components/lps25hb" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/Components/sx1272" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/X_NUCLEO_IKS01A1" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/X_NUCLEO_IKS01A2" -I"C:/Users/matula/Documents/GitHub/diplomka/STM32CubeExpansion_LRWAN_V1.1.2/Drivers/BSP/sx1272mb2das"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+Projects/End_Node/%.o: ../Projects/End_Node/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
