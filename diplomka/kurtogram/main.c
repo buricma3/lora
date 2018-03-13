@@ -11,7 +11,7 @@
 #define nlevel 3
 #define mocnina_dvou 8		//2 na nlevel
 
-#define sizeOfArray  3423
+#define sizeOfArray  7696
 
 union {
 	double adc_values[sizeOfArray];
@@ -21,13 +21,8 @@ union {
 double K[nlevel+1][mocnina_dvou];
 
 
-//double h_real[17] = {-0.0019,	 0.0022, 	0, 		 0, 	0.0409, 	0.0316, 	-0, 		 0.2067, 	 0.4003, 	0.2067, 	0, 			 0.0316, 	 0.0409, 	0, 	-0, 		0.0022, 	-0.0019};
-//double h_imag[17] = {0,			 0.0022, 	0.0108, -0, 	-0, 		0.0316,		-0.0810, 	-0.2067, 	-0, 		0.2067, 	0.0810, 	-0.0316,	-0,			0, 	-0.0108,	-0.0022, 	0};
 double h_real[17] = {-0.001873, 0.002176, 0.000000, 0.000000, 0.040902, 0.031603, -0.000000, 0.206738, 0.400330, 0.206738, 0.000000, 0.031603, 0.040902, 0.000000, -0.000000, 0.002176, -0.001873};
 double h_imag[17] = { 0.000000, 0.002176, 0.010843, -0.000000, -0.000000, 0.031603, -0.081012, -0.206738, -0.000000, 0.206738, 0.081012, -0.031603, -0.000000, 0.000000, -0.010843, -0.002176, 0.000000};
-
-//double g_real[16] = {-0.0022, 	-0,	 		0,		 0.0409, 	-0.0316,	0,			-0.2067,		 0.4003,	-0.2067,		-0,			-0.0316,	 0.0409,	0,	0,		-0.0022,	-0.0019};
-//double g_imag[16] = {0.0022,		-0.0108,	0, 		-0,			 0.0316,	0.0810,		-0.2067,		-0,			 0.2067,		-0.0810,	-0.0316,	-0,		 	0,	0.0108,	-0.0022,	 0};
 
 double g_real[16] = {-0.002176, -0.000000, -0.000000, 0.040902, -0.031603, 0.000000, -0.206738, 0.400330, -0.206738, -0.000000, -0.031603, 0.040902, -0.000000, 0.000000, -0.002176, -0.001873};
 double g_imag[16] = {0.002176, -0.010843, -0.000000, -0.000000, 0.031603, 0.081012, -0.206738, -0.000000, 0.206738, -0.081012, -0.031603, -0.000000, 0.000000, 0.010843, -0.002176, 0.000000};
@@ -43,7 +38,7 @@ double mean(double *x, int size)
 	for (int i=0; i < size; i++) {
 			result += x[i];
 	}
-	return result/sizeOfArray;
+	return result/size;
 }
 
 
@@ -97,12 +92,11 @@ int emptyArray(double *x, int size)
 double kurtosis(double *x_real, double *x_imag, int size)
 {
 	double kurtosis_value = 0;
+
 	if(emptyArray(x_real, size) == 1 && emptyArray(x_imag, size) == 1)
 	{
 		return 0;
 	}
-
-	//double mean_real, mean_imag;
 	double mean_real = mean(x_real, size);
 	double mean_imag = mean(x_imag, size);
 	//arm_mean_f32(x_real, size, &mean_real);
@@ -115,19 +109,17 @@ double kurtosis(double *x_real, double *x_imag, int size)
 		x_imag[i] -= mean_imag;
 	}
 
-
 	double E = 0;
 	for (int i = 0; i < size; i++)
 	{
 		E += (x_real[i]*x_real[i] ) + (x_imag[i]*x_imag[i] );
 	}
 	E = E/size;
-	printf("E = %f\n", E);
+	//printf("E = %f\n", E);
 	if (E < 0.00000001)
 	{
 		return 0;
 	}
-
 
 	for (int i = 0; i < size; i++)
 	{
@@ -147,6 +139,7 @@ double kurtosis(double *x_real, double *x_imag, int size)
 }
 
 int row_index_for_first_level = 0;
+
 void kurt_local(double *x_real, double *x_imag , int size, int level, int begin)
 {
 
@@ -156,17 +149,9 @@ void kurt_local(double *x_real, double *x_imag , int size, int level, int begin)
 	double d_real[size/2];
 	double d_imag[size/2];
 
-	double a_real_small[(size/2)-17];
-	double a_imag_small[(size/2)-17];
 
-	double d_real_small[(size/2)-16];
-	double d_imag_small[(size/2)-16];
-
-
-	DBFB(a_real, a_imag,x_real, x_imag, h_real, h_imag, size, 17);
+	DBFB(a_real, a_imag, x_real, x_imag, h_real, h_imag, size, 17);
 	DBFB(d_real, d_imag, x_real, x_imag, g_real, g_imag, size, 16);
-
-
 
 	for(int i=0;i<size/2;i=i+2)
 	{
@@ -174,25 +159,10 @@ void kurt_local(double *x_real, double *x_imag , int size, int level, int begin)
 		d_imag[i] = -d_imag[i];
 	}
 
-
-	for(int i=17;i<size/2;i++)
-	{
-		a_real_small[i] = a_real[i];
-		a_imag_small[i] = a_imag[i];
-	}
-
-	for(int i=16;i<size/2;i++)
-	{
-		d_real_small[i] = d_real[i];
-		d_imag_small[i] = d_imag[i];
-	}
-
-
-
-	double K1 = kurtosis(a_real_small, a_imag_small, (size/2)-17);
-	double K2 = kurtosis(d_real_small, d_imag_small, (size/2)-16);
-	printf("k1 = %f\n", K1);
-	printf("k2 = %f\n", K2);
+	double K1 = kurtosis(&a_real[16], &a_imag[16], (size/2)-16);
+	double K2 = kurtosis(&d_real[15], &d_imag[15], (size/2)-15);
+	//printf("k1 = %f\n", K1);
+	//printf("k2 = %f\n", K2);
 
 
 	if (level == 1)
@@ -237,57 +207,47 @@ void kurt_local(double *x_real, double *x_imag , int size, int level, int begin)
 
 void DBFB(double *res_real, double *res_imag, double *x_real, double *x_imag, double *f_real, double *f_imag, int size, int size_filter)
 {
-	double filtr_real[size];
-	double filtr_imag[size];
 	int index_start = -size_filter+1, index_end = 0, i_s;
 	int index_coef = 0;
+	int index_array = 0;
+	int save = 0;
 	double result_real;
 	double result_imag;
 	while(index_end<size)
 	{
-		result_real = 0;
-		result_imag = 0;
-		if(index_start<0)
+		if(save == 1)
 		{
-			i_s = 0;
+			result_real = 0;
+			result_imag = 0;
+			index_coef = 0;
+
+			if(index_start<0)
+			{
+				i_s = 0;
+			}
+			else
+			{
+				i_s = index_start;
+			}
+			for(int i=index_end;i>=i_s;i--)
+			{
+				result_real += f_real[index_coef]*x_real[i] - f_imag[index_coef]*x_imag[i];
+				result_imag += f_real[index_coef]*x_imag[i] + f_imag[index_coef]*x_real[i];
+				index_coef++;
+			}
+			res_real[index_array] = result_real;
+			res_imag[index_array] = result_imag;
+			index_array++;
+			save = 0;
 		}
-		else
+		else if(save == 0)
 		{
-			i_s = index_start;
-		}
-		index_coef = 0;
-		for(int i=index_end;i>=i_s;i--)
-		{
-			//result_real += f_real[index_coef]*x_real[i];
-			result_real += f_real[index_coef]*x_real[i] - f_imag[index_coef]*x_imag[i];
-			result_imag += f_real[index_coef]*x_imag[i] + f_imag[index_coef]*x_real[i];
-			//printf("real res = %f filter = %f x = %f \n", result_real, f_real[index_coef], x_real[i]);
-			//printf("imag res = %f filter = %f x = %f \n", result_imag, f_imag[index_coef], x_imag[i]);
-			index_coef++;
+			save = 1;
 		}
 
-		//printf(" \n\n");
-		filtr_real[index_end] = result_real;
-		filtr_imag[index_end] = result_imag;
 		index_start++;
 		index_end++;
 	}
-	/*for(int i=0;i<20;i++)
-	{
-		printf("real = %f ", filtr_real[i]);
-		printf("imag = %f \n", filtr_imag[i]);
-	}*/
-	for(int i=1;i<=size/2;i++)
-	{
-		res_real[i-1] = filtr_real[i*2-1];
-		res_imag[i-1] = filtr_imag[i*2-1];
-	}
-
-	/*for(int i=0;i<20;i++)
-	{
-		printf("real = %f ", res_real[i]);
-		printf("imag = %f \n", res_imag[i]);
-	}*/
 }
 
 int index_i, index_j;
@@ -318,7 +278,7 @@ int main()
 {
    printf("kurtogram start\n");
 
-   FILE* f = fopen("data3.txt", "r");
+   FILE* f = fopen("data1.txt", "r");
    double number = 0;
    int i =0;
 
