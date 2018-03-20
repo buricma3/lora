@@ -7,7 +7,7 @@
 #include "timeServer.h"
 #include "vcom.h"
 #include "arm_math.h"
-#include "kurtogram.h"
+//#include "kurtogram.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -16,8 +16,9 @@
 static TimerEvent_t MeasurementStartTimer;
 ADC_HandleTypeDef 				 hadc;
 extern DMA_HandleTypeDef         DmaHandle;
-int counter = 0;
+extern TIM_HandleTypeDef 		  htim2;
 int sizeOfArray = 2000;
+
 
 extern union {
 	uint16_t *adc_values;
@@ -57,7 +58,6 @@ union {
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-void compute_crest();
 static void MX_ADC_Init(void);
 /* call back when LoRa will transmit a frame*/
 static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed);
@@ -87,80 +87,88 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
 
 /* Private functions ---------------------------------------------------------*/
 
-//static volatile bool dma_done = false;
+volatile bool dma_done = false;
+
+#define FLASH_USER_START_ADDR   (FLASH_BASE + FLASH_PAGE_SIZE * 256)             /* Start @ of user Flash area */
+#define FLASH_USER_END_ADDR     (FLASH_USER_START_ADDR + FLASH_PAGE_SIZE * 10)   /* End @ of user Flash area */
+
+#define DATA_32                 ((uint32_t)0x12345678)
+
+static FLASH_EraseInitTypeDef EraseInitStruct;
+uint32_t Address = 0;
+__IO uint32_t data32 = 0;
+
 static void done_cb(DMA_HandleTypeDef* dh)
 {
-	DISABLE_IRQ( );
+	//DISABLE_IRQ( );
 	//dma_done = true;
-	//PRINTF("dma handler\n\r");
-	kurtogram();
+	PRINTF("dma handler\n\r");
+	//kurtogram();
 	//compute_crest();
-	ENABLE_IRQ();
-}
+	//ENABLE_IRQ();
 
+	HAL_FLASH_Unlock();
 
+	EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
+	EraseInitStruct.PageAddress = FLASH_USER_START_ADDR;
+	EraseInitStruct.NbPages     = (FLASH_USER_END_ADDR - FLASH_USER_START_ADDR) / FLASH_PAGE_SIZE;
 
-void compute_crest()
-{
-	PRINTF("crest\n\r");
-	for (int i=sizeOfArray-1; i >= 0; i--) {
-		samples.flt[i] = (float)samples.adc_values[i];
+	if (HAL_FLASHEx_Erase(&EraseInitStruct, 0) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	Address = FLASH_USER_START_ADDR;
+
+	while (Address < FLASH_USER_END_ADDR)
+	{
+		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, Address, DATA_32) == HAL_OK)
+	    {
+			Address = Address + 4;
+	    }
+
 	}
 
-	float mean;
-	arm_mean_f32(samples.flt, sizeOfArray, &mean);
+	HAL_FLASH_Lock();
 
-	char buf[1000];
-	sprintf(buf, "mean: %d\n\r", (int)mean);
-	PRINTF(buf);
+	Address = FLASH_USER_START_ADDR;
 
-
-	for (int i = 0; i < sizeOfArray; i++) {
-		samples.flt[i] -= mean;
+	while (Address < FLASH_USER_END_ADDR)
+	{
+		data32 = *(__IO uint32_t *)Address;
+	    Address = Address + 4;
 	}
-/*
+
 	char buf[1000];
-	sprintf(buf, "hodnota: %u, mean: %d\n\r", samples.adc_values[1],  (int)mean);
+	sprintf(buf, "flash: %d\n\r", (int)Address);
 	PRINTF(buf);
-	//PRINTF("mean: %.6f\n\r", mean);
-
-
-	//rms - efektivni hodnota
-
-	float rms;
-	arm_rms_f32(samples.flt, sizeOfArray, &rms);
-
-
-	// absolute value of each element
-	arm_abs_f32(samples.flt, samples.absolute, sizeOfArray);
-
-	// peak
-	float max;
-	uint32_t indexMax;
-	arm_max_f32(samples.absolute, sizeOfArray, &max, &indexMax);
-
-	// crest
-	float crest = max/rms;*/
-
-
 }
+
 
 static void MeasurementStartTimerIrq(void)
 {
-	//GPIOC->BSRR = 1<<7;
+	GPIOC->BSRR = 1<<7;
+	dma_done = false;
 
 	PRINTF("measure\n\r");
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
 	TimerReset(&MeasurementStartTimer);
+
+	HAL_Delay(200);
 	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
 	{
 		Error_Handler();
 	}
 	DmaHandle.XferCpltCallback = done_cb;
-	//dma_done = false;
+
+
+	HAL_TIM_Base_Start(&htim2);
+
+	/*while(!dma_done) {
+		HAL_Delay(100);
+	}*/
 
 	PRINTF("measure done \n\r");
-	//GPIOC->BRR = 1<<7;
+	GPIOC->BRR = 1<<7;
 
 }
 

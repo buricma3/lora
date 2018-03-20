@@ -337,8 +337,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     __HAL_RCC_TIM2_CLK_ENABLE();
   /* USER CODE BEGIN TIM2_MspInit 1 */
 
-    HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+    //HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
+    //HAL_NVIC_EnableIRQ(TIM2_IRQn);
   /* USER CODE END TIM2_MspInit 1 */
   }
 }

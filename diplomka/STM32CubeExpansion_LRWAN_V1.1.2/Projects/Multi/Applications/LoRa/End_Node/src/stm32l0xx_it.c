@@ -64,7 +64,6 @@ Maintainer: Miguel Luis and Gregory Cristian
 #include "low_power.h"
 
 
-extern ADC_HandleTypeDef             hadc;
 extern DMA_HandleTypeDef         DmaHandle;
 /** @addtogroup STM32L1xx_HAL_Examples
   * @{
