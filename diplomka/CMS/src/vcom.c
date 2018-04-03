@@ -93,7 +93,7 @@ void vcom_Init(void)
     Error_Handler(); 
   }
   
-  HAL_NVIC_SetPriority(USARTX_IRQn, 0x1, 0);//1
+  HAL_NVIC_SetPriority(USARTX_IRQn, 0x2, 0);//1
   HAL_NVIC_EnableIRQ(USARTX_IRQn);
 }
 

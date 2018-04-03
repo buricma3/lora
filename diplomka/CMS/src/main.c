@@ -28,7 +28,7 @@ extern DMA_HandleTypeDef         DmaHandle;
 extern TIM_HandleTypeDef 		  htim2;
 
 
-#define MEAS_INTERVAL_MS							( 1*10*1000) //every 3*60 second
+#define MEAS_INTERVAL_MS							( 1*10*1000) //every 3*60 second 3 minute
 #define LPP_APP_PORT 99
 
 /*!
@@ -62,7 +62,7 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 /* call back when LoRa has received a frame*/
 static void LoraRxData( lora_AppData_t *AppData);
 
-void flash_test();
+//void flash_test();
 
 /* Private variables ---------------------------------------------------------*/
 /* load call backs*/
@@ -88,19 +88,16 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
 
 volatile bool dma_done = false;
 
-
 static void done_cb(DMA_HandleTypeDef* dh)
 {
-	//DISABLE_IRQ( );
-	//dma_done = true;
+	dma_done = true;
 	//PRINTF("dma handler\n\r");
-	kurtogram();
-	//compute_crest();
-	//ENABLE_IRQ();
+
 }
 
 static void MeasurementStartTimerIrq(void)
 {
+
 	GPIOC->BSRR = 1<<7;
 	dma_done = false;
 
@@ -116,78 +113,22 @@ static void MeasurementStartTimerIrq(void)
 	DmaHandle.XferCpltCallback = done_cb;
 
 
-	HAL_TIM_Base_Start(&htim2);
+	//HAL_TIM_Base_Start(&htim2);
 
-	/*while(!dma_done) {
+	while(!dma_done) {
 		HAL_Delay(100);
-	}*/
+	}
 
-	PRINTF("measure done \n\r");
+	kurtogram();
+
+	PRINTF("measure done \n\r\n\r");
 	GPIOC->BRR = 1<<7;
 
 
 }
 
-#define FLASH_USER_START_ADDR   (FLASH_BASE + FLASH_PAGE_SIZE * 256)             /* Start @ of user Flash area */
-#define FLASH_USER_END_ADDR     (FLASH_USER_START_ADDR + FLASH_PAGE_SIZE * 10)   /* End @ of user Flash area */
-
-#define DATA_32                 ((uint32_t)0x12345678)
-
-static FLASH_EraseInitTypeDef EraseInitStruct;
 
 
-uint32_t Address = 0, PAGEError = 0;
-__IO uint32_t data32 = 0, MemoryProgramStatus = 0;
-void flash_test()
-{
-	HAL_FLASH_Unlock();
-
-	EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
-	EraseInitStruct.PageAddress = FLASH_USER_START_ADDR;
-	EraseInitStruct.NbPages     = (FLASH_USER_END_ADDR - FLASH_USER_START_ADDR) / FLASH_PAGE_SIZE;
-
-	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/*Address = FLASH_USER_START_ADDR;
-
-	while (Address < FLASH_USER_END_ADDR)
-	{
-		if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, Address, DATA_32) == HAL_OK)
-	    {
-			Address = Address + 4;
-	    }
-		else
-		{
-			Error_Handler();
-		}
-	}
-
-	HAL_FLASH_Lock();
-
-	Address = FLASH_USER_START_ADDR;
-
-	while (Address < FLASH_USER_END_ADDR)
-	{
-		data32 = *(__IO uint32_t *)Address;
-		if (data32 != DATA_32)
-		{
-		   MemoryProgramStatus++;
-		}
-	    Address = Address + 4;
-	}
-
-	if (MemoryProgramStatus == 0)
-	{
-	   // BSP_LED_On(LED2);
-		PRINTF("No Error detected\n\r");
-	}
-	else
-	{
-		Error_Handler();
-	}*/
-}
 
 
 int main(void)
@@ -203,33 +144,31 @@ int main(void)
 	/* Configure the Lora Stack*/
 	lora_Init( &LoRaMainCallbacks, &LoRaParamInit);
 
+
+
 	TimerInit( &MeasurementStartTimer, MeasurementStartTimerIrq );
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
 	TimerStart( &MeasurementStartTimer );
 
-	flash_test();
-
 	PRINTF("START\n\r");
+
+
 	  /* main loop*/
 	while( 1 )
 	{
-	    /* run the LoRa class A state machine*/
+	    // run the LoRa class A state machine
 	    lora_fsm( );
 
 	    DISABLE_IRQ( );
-	    /* if an interrupt has occurred after DISABLE_IRQ, it is kept pending
-	     * and cortex will not enter low power anyway  */
+	    // if an interrupt has occurred after DISABLE_IRQ, it is kept pending
+	    // and cortex will not enter low power anyway
 	    if ( lora_getDeviceState( ) == DEVICE_STATE_SLEEP )
 	    {
 	#ifndef LOW_POWER_DISABLE
-	      //LowPower_Handler( );
+	      LowPower_Handler( );
 	#endif
 	    }
 	    ENABLE_IRQ();
-
-	    /* USER CODE BEGIN 2 */
-
-	    /* USER CODE END 2 */
 	  }
 }
 
