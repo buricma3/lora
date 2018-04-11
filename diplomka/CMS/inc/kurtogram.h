@@ -2,12 +2,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#define sizeOfArray			 2000
+#define sizeOfArray			 2048
 
 union {
 	uint16_t adc_values[sizeOfArray];
-	float flt[sizeOfArray];
-	uint32_t u[sizeOfArray];
+	float test[sizeOfArray];
+	uint32_t data[sizeOfArray];
 } samples;
 
 void kurtogram();
+
+
+
+

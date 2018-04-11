@@ -34,7 +34,7 @@ extern TIM_HandleTypeDef 		  htim2;
 /*!
  * Defines the application data transmission duty cycle. 4 min, value in [ms].
  */
-#define APP_TX_DUTYCYCLE                           4 * 60 * 1000
+#define APP_TX_DUTYCYCLE                           5 * 60 * 1000
 /*!
  * LoRaWAN Adaptive Data Rate
  * @note Please note that when ADR is enabled the end-device should be static
@@ -102,8 +102,8 @@ static void MeasurementStartTimerIrq(void)
 	dma_done = false;
 
 	PRINTF("measure\n\r");
-	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
-	TimerReset(&MeasurementStartTimer);
+	//TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
+	//TimerReset(&MeasurementStartTimer);
 
 	HAL_Delay(200);
 	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
