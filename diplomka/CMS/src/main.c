@@ -113,8 +113,6 @@ static void MeasurementStartTimerIrq(void)
 	DmaHandle.XferCpltCallback = done_cb;
 
 
-	//HAL_TIM_Base_Start(&htim2);
-
 	while(!dma_done) {
 		HAL_Delay(100);
 	}
@@ -126,9 +124,6 @@ static void MeasurementStartTimerIrq(void)
 
 
 }
-
-
-
 
 
 int main(void)
