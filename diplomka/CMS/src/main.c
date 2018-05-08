@@ -19,6 +19,7 @@
 #include "arm_math.h"
 #include "kurtogram.h"
 #include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 
 
@@ -91,7 +92,7 @@ volatile bool dma_done = false;
 static void done_cb(DMA_HandleTypeDef* dh)
 {
 	dma_done = true;
-	//PRINTF("dma handler\n\r");
+	PRINTF("dma handler\n\r");
 
 }
 
@@ -106,7 +107,7 @@ static void MeasurementStartTimerIrq(void)
 	//TimerReset(&MeasurementStartTimer);
 
 	HAL_Delay(200);
-	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, sizeOfArray) != HAL_OK)
+	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, 2050) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -117,7 +118,10 @@ static void MeasurementStartTimerIrq(void)
 		HAL_Delay(100);
 	}
 
+	normalization();
 	kurtogram();
+	compute_crest();
+	kurtosis_ratio();
 
 	PRINTF("measure done \n\r\n\r");
 	GPIOC->BRR = 1<<7;
@@ -139,14 +143,14 @@ int main(void)
 	/* Configure the Lora Stack*/
 	lora_Init( &LoRaMainCallbacks, &LoRaParamInit);
 
-
+	MeasurementStartTimerIrq();
 
 	TimerInit( &MeasurementStartTimer, MeasurementStartTimerIrq );
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
 	TimerStart( &MeasurementStartTimer );
 
-	PRINTF("START\n\r");
 
+	PRINTF("START\n\r");
 
 	  /* main loop*/
 	while( 1 )
@@ -167,19 +171,19 @@ int main(void)
 	  }
 }
 
-static void MX_ADC_Init(void)
+static void MX_ADC_Init(void)// 21739 Hz
 {
 
 	hadc.Instance = ADC1;
 	hadc.Init.OversamplingMode      = DISABLE;
 
-	hadc.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV2;
 	hadc.Init.LowPowerAutoPowerOff  = DISABLE;
 	hadc.Init.LowPowerFrequencyMode = DISABLE;
 	hadc.Init.LowPowerAutoWait      = DISABLE;
 
 	hadc.Init.Resolution            = ADC_RESOLUTION_12B;
-	hadc.Init.SamplingTime          = ADC_SAMPLETIME_160CYCLES_5;
+	hadc.Init.SamplingTime    		= ADC_SAMPLETIME_79CYCLES_5;
+	hadc.Init.ClockPrescaler   		= ADC_CLOCK_SYNC_PCLK_DIV1;
 	hadc.Init.ScanConvMode          = ADC_SCAN_DIRECTION_FORWARD;
 	hadc.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
 	hadc.Init.ContinuousConvMode    = ENABLE; //ENABLE
@@ -228,22 +232,30 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 
     *IsTxConfirmed =  LORAWAN_CONFIRMED_MSG;
 
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
-    AppData->Buff[i++] = 0x00;
+
+    uint32_t maxKurt = FloatToUint(index_m);
+    uint32_t rms_send = FloatToUint(rms);
+    uint32_t crest_send = FloatToUint(crest);
+    uint32_t kr_send = FloatToUint(kr);
+
+    AppData->Buff[i++] = index_i;
+    AppData->Buff[i++] = index_j;
+    AppData->Buff[i++] = maxKurt;
+    AppData->Buff[i++] = maxKurt>>8;
+    AppData->Buff[i++] = maxKurt>>16;
+    AppData->Buff[i++] = maxKurt>>24;
+    AppData->Buff[i++] = rms_send;
+    AppData->Buff[i++] = rms_send>>8;
+    AppData->Buff[i++] = rms_send>>16;
+    AppData->Buff[i++] = rms_send>>24;
+    AppData->Buff[i++] = crest_send;
+    AppData->Buff[i++] = crest_send>>8;
+    AppData->Buff[i++] = crest_send>>16;
+    AppData->Buff[i++] = crest_send>>24;
+    AppData->Buff[i++] = kr_send;
+    AppData->Buff[i++] = kr_send>>8;
+    AppData->Buff[i++] = kr_send>>16;
+    AppData->Buff[i++] = kr_send>>24;
 
     AppData->BuffSize = i;
 
