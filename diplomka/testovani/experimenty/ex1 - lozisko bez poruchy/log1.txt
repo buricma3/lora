@@ -1,0 +1,217 @@
+ABP
+DevEui= 33-39-34-37-81-35-76-14
+DevAdd=  26011155
+NwkSKey= 13 6C 87 85 C0 17 C9 FC 8D A6 D7 C3 31 B1 A4 E1
+AppSKey= 3A 9D 48 12 F5 9D 54 00 29 C3 1B C2 C3 02 94 2A
+measure ------------------------------ 0 otacek
+mean: 2088.136230
+2
+0
+0.515972
+rms: 1.514091
+peak: 6.136230
+crest: 4.052748
+trimmed: 2.017629
+raw: 2.961138
+kr: 1.467633
+measure done
+
+START
+txDone
+measure
+mean: 2087.727539
+3
+0
+0.431248
+rms: 1.233473
+peak: 4.727539
+crest: 3.832705
+trimmed: 1.953547
+raw: 2.735734
+kr: 1.400393
+measure done
+
+txDone
+measure
+mean: 2087.591797
+4
+7
+0.382980
+rms: 1.179414
+peak: 5.408203
+crest: 4.585502
+trimmed: 1.965546
+raw: 2.957806
+kr: 1.504827
+measure done
+
+txDone
+measure    ---------------------------------500 otacek
+mean: 2087.416016
+3
+14
+7.601373
+rms: 13.676351
+peak: 50.416016
+crest: 3.686365
+trimmed: 2.244009
+raw: 3.263645
+kr: 1.454381
+measure done
+
+txDone
+measure
+mean: 2087.517578
+2
+12
+22.728180
+rms: 16.019979
+peak: 86.482422
+crest: 5.398410
+trimmed: 2.180075
+raw: 4.318099
+kr: 1.980711
+measure done
+
+txDone
+measure
+mean: 2087.556641
+4
+2
+5.005971
+rms: 16.903151
+peak: 89.443359
+crest: 5.291520
+trimmed: 2.175448
+raw: 4.541344
+kr: 2.087544
+measure done
+
+txDone
+measure  -----------------------------------1500 otacek
+mean: 2087.471191
+4
+2
+0.918130
+rms: 43.720222
+peak: 182.528809
+crest: 4.174929
+trimmed: 2.168805
+raw: 3.262299
+kr: 1.504192
+measure done
+
+txDone
+measure
+mean: 2087.387695
+4
+2
+1.378549
+rms: 38.244259
+peak: 141.612305
+crest: 3.702838
+trimmed: 2.064867
+raw: 3.052573
+kr: 1.478339
+measure done
+
+txDone
+measure
+mean: 2087.565430
+4
+2
+3.260631
+rms: 48.201168
+peak: 221.565430
+crest: 4.596682
+trimmed: 2.366949
+raw: 4.285710
+kr: 1.810648
+measure done
+
+txDone
+measure   -------------------------------2500 otacek
+mean: 2087.753906
+2
+12
+1.106558
+rms: 65.964989
+peak: 203.246094
+crest: 3.081121
+trimmed: 2.136230
+raw: 2.740610
+kr: 1.282919
+measure done
+
+txDone
+measure
+mean: 2087.774414
+4
+4
+2.246413
+rms: 65.546005
+peak: 247.225586
+crest: 3.771787
+trimmed: 2.172904
+raw: 3.071938
+kr: 1.413748
+measure done
+
+txDone
+measure
+mean: 2087.904785
+1
+0
+0.674223
+rms: 63.746902
+peak: 272.095215
+crest: 4.268368
+trimmed: 2.138980
+raw: 3.148099
+kr: 1.471776
+measure done
+
+
+txDone
+measure -------------------------------- 3 500 otacek
+mean: 2088.046387
+4
+5
+1.752640
+rms: 103.367729
+peak: 355.046387
+crest: 3.434789
+trimmed: 2.132154
+raw: 2.854187
+kr: 1.338640
+measure done
+
+txDone
+measure
+mean: 2087.817383
+2
+12
+1.131634
+rms: 92.795319
+peak: 338.182617
+crest: 3.644393
+trimmed: 2.255138
+raw: 3.040953
+kr: 1.348455
+measure done
+
+txDone
+measure
+mean: 2088.214844
+1
+0
+0.531691
+rms: 91.925110
+peak: 317.785156
+crest: 3.457000
+trimmed: 2.181527
+raw: 2.788231
+kr: 1.278110
+measure done
+
+txDone

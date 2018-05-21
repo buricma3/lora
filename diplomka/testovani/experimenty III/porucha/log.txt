@@ -1,0 +1,216 @@
+ABP
+DevEui= 33-39-34-37-81-35-76-14
+DevAdd=  26011155
+NwkSKey= 13 6C 87 85 C0 17 C9 FC 8D A6 D7 C3 31 B1 A4 E1
+AppSKey= 3A 9D 48 12 F5 9D 54 00 29 C3 1B C2 C3 02 94 2A
+measure
+mean: 2064.921387
+1
+0
+0.767603
+rms: 1.043106
+peak: 5.078613
+crest: 4.868743
+trimmed: 3.195778
+raw: 3.682102
+kr: 1.152177
+measure done
+
+START
+txDone
+measure
+mean: 2065.902344
+1
+8
+0.892566
+rms: 0.988321
+peak: 4.097656
+crest: 4.146079
+trimmed: 2.451430
+raw: 3.705537
+kr: 1.511582
+measure done
+
+txDone
+measure
+mean: 2065.714355
+3
+6
+9.790689
+rms: 28.760712
+peak: 126.285645
+crest: 4.390908
+trimmed: 2.545150
+raw: 4.772808
+kr: 1.875256
+measure done
+
+txDone
+measure
+mean: 2065.975586
+4
+7
+4.859677
+rms: 29.387796
+peak: 102.975586
+crest: 3.504025
+trimmed: 2.122777
+raw: 3.004151
+kr: 1.415199
+measure done
+
+txDone
+measure
+mean: 2065.634277
+4
+7
+5.684383
+rms: 52.498093
+peak: 178.634277
+crest: 3.402681
+trimmed: 2.194210
+raw: 3.127349
+kr: 1.425273
+measure done
+
+txDone
+measure
+mean: 2065.762207
+4
+5
+1.975773
+rms: 49.102833
+peak: 155.762207
+crest: 3.172163
+trimmed: 2.279648
+raw: 3.076647
+kr: 1.349615
+measure done
+
+txDone
+measure
+mean: 2066.239746
+3
+0
+1.342672
+rms: 79.873383
+peak: 319.239746
+crest: 3.996823
+trimmed: 2.312043
+raw: 3.452696
+kr: 1.493353
+measure done
+
+txDone
+measure
+mean: 2065.986328
+2
+8
+0.863318
+rms: 88.239410
+peak: 280.986328
+crest: 3.184363
+trimmed: 2.076163
+raw: 2.595931
+kr: 1.250350
+measure done
+
+txDone
+measure
+mean: 2065.969727
+4
+9
+0.906358
+rms: 124.584541
+peak: 508.969727
+crest: 4.085336
+trimmed: 2.244599
+raw: 3.302572
+kr: 1.471342
+measure done
+
+txDone
+measure
+mean: 2065.988770
+1
+0
+0.603307
+rms: 0.990860
+peak: 4.011230
+crest: 4.048230
+trimmed: 2.482531
+raw: 3.589829
+kr: 1.446036
+measure done
+
+txDone
+measure
+mean: 2065.532715
+0
+0
+1.544663
+rms: 1.117116
+peak: 5.467285
+crest: 4.894105
+trimmed: 3.130607
+raw: 4.544496
+kr: 1.451634
+measure done
+
+txDone
+measure
+mean: 2065.631836
+0
+0
+1.249415
+rms: 0.999114
+peak: 5.368164
+crest: 5.372923
+trimmed: 2.491449
+raw: 4.249382
+kr: 1.705587
+measure done
+
+txDone
+measure
+mean: 2065.330078
+0
+0
+1.120511
+rms: 1.011388
+peak: 5.330078
+crest: 5.270061
+trimmed: 3.297167
+raw: 4.120515
+kr: 1.249714
+measure done
+
+txDone
+measure
+mean: 2066.616211
+3
+2
+0.195714
+rms: 1.057977
+peak: 3.616211
+crest: 3.418044
+trimmed: 2.099467
+raw: 2.601849
+kr: 1.239290
+measure done
+
+txDone
+measure
+mean: 2110.305664
+1
+8
+61.182049
+rms: 79.627594
+peak: 154.694336
+crest: 1.942723
+trimmed: 3.552221
+raw: 2.849263
+kr: 0.802108
+measure done
+
+txDone

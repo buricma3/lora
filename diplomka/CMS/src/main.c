@@ -92,7 +92,7 @@ volatile bool dma_done = false;
 static void done_cb(DMA_HandleTypeDef* dh)
 {
 	dma_done = true;
-	PRINTF("dma handler\n\r");
+	//PRINTF("dma handler\n\r");
 
 }
 
@@ -110,6 +110,7 @@ static void MeasurementStartTimerIrq(void)
 	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, 2050) != HAL_OK)
 	{
 		Error_Handler();
+		PRINTF("Error DMA\n\r");
 	}
 	DmaHandle.XferCpltCallback = done_cb;
 

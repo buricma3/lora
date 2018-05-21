@@ -1530,7 +1530,7 @@ void SX1272OnDio1Irq( void )
                 if( ( RadioEvents != NULL ) && ( RadioEvents->RxTimeout != NULL ) )
                 {
                     RadioEvents->RxTimeout( );
-                    PRINTF( "rxTimeOut\n\r" );
+                    //PRINTF( "rxTimeOut\n\r" );
                 }
                 break;
             default:

@@ -34,6 +34,8 @@ const float g_imag[16] = {0.002176, -0.010843, -0.000000, -0.000000, 0.031603, 0
 void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_imag, const float *f_real, const float *f_imag, int size, int size_filter, int first);
 void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int begin, int first);
 void insertSort(uint32_t *array, int left, int right);
+void quicksort(uint32_t *A, int l, int h);
+void shakerSort(uint32_t * array, int size);
 float kurtosis(uint32_t *x_real, uint32_t *x_imag, int size, int first);
 void maxK();
 
@@ -113,9 +115,8 @@ void normalization()
 {
 	/*for(int i=0;i<sizeOfArray+2;i++)
 	{
-		PRINTF("%"PRIu32", ", samples.adc_values[i]);
+		PRINTF("%"PRIu16", ", samples.adc_values[i]);
 	}*/
-
 
 	//testData();
 	for (int i=sizeOfArray+1; i >= 0; i--) {
@@ -127,13 +128,13 @@ void normalization()
 		samples.data[i] = samples.data[i+2];
 	}
 
-	for(int i=0;i<sizeOfArray+2;i++)
+	/*for(int i=0;i<sizeOfArray;i++)
 	{
 		PRINTF("%f, ", UintToFloat(samples.data[i]));
-	}
+	}*/
 
 	float m = mean(samples.data, sizeOfArray);
-	PRINTF("m: %.6f \n\r", m);
+	PRINTF("mean: %.6f \n\r", m);
 
 	//normalizace
 	for (int i = 0; i < sizeOfArray; i++) {
@@ -143,7 +144,7 @@ void normalization()
 
 void kurtogram()
 {
-	PRINTF("kurtogram\n\r");
+	//PRINTF("kurtogram\n\r");
 
 	//inicializace
 	row_index_for_first_level = 0;
@@ -173,7 +174,7 @@ void kurtogram()
 	}*/
 
 	maxK();
-	PRINTF("\n\r");
+	//PRINTF("\n\r");
 	PRINTF("%d \n\r", index_i);
 	PRINTF("%d \n\r", index_j);
 	PRINTF("%.6f \n\r", index_m);
@@ -225,33 +226,38 @@ void compute_crest()
 
 void kurtosis_ratio()
 {
-	insertSort(samples.data, 0, sizeOfArray-1);
-
+	shakerSort(samples.data, sizeOfArray);
 	uint32_t *samples_imag = 0;
-	float kurtosisOfTrimmedSignal = kurtosis(&samples.data[102], samples_imag, 1843, 1);
-	kurtosisOfSignal = kurtosis(&samples.data[0], samples_imag, sizeOfArray, 1);
+	float kurtosisOfTrimmedSignal = kurtosis(&samples.data[102], samples_imag, 1843, 1) +3;
+	PRINTF("trimmed: %.6f \n\r", kurtosisOfTrimmedSignal);
+	kurtosisOfSignal = kurtosis(&samples.data[0], samples_imag, sizeOfArray, 1) +3;
+	PRINTF("raw: %.6f \n\r", kurtosisOfSignal);
 	kr = kurtosisOfSignal/kurtosisOfTrimmedSignal;
 	PRINTF("kr: %.6f \n\r", kr);
 }
 
-void insertSort(uint32_t *array, int left, int right)
-{
-	//PRINTF("insertion sort\r\n");
-	for (int i = 0; i < right-1; i++)
-	 {
-		 //PRINTF("i:%d\r\n",i);
-		 int j = i + 1;
-	     float tmp = UintToFloat(array[j]);
-	     while (j > 0 && tmp > UintToFloat(array[j-1]))
-	     {
-	    	 array[j] = array[j-1];
-	         j--;
-	     }
-	     array[j] = FloatToUint(tmp);
-	 }
+void shakerSort(uint32_t * array, int size) {
+    for (int i = 0; i < 103; i++) {
+        bool swapped = false;
+        for (int j = i; j < size - i - 1; j++) {
+            if (UintToFloat(array[j]) < UintToFloat(array[j+1])) {
+            	uint32_t tmp = array[j];
+                array[j] = array[j+1];
+                array[j+1] = tmp;
+                swapped = true;
+            }
+        }
+        for (int j = size - 2 - i; j > i; j--) {
+            if (UintToFloat(array[j]) > UintToFloat(array[j-1])) {
+            	uint32_t tmp = array[j];
+                array[j] = array[j-1];
+                array[j-1] = tmp;
+                swapped = true;
+            }
+        }
+        if(!swapped) break;
+    }
 }
-
-
 
 
 int emptyArray(uint32_t *x, int size)
