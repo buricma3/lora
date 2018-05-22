@@ -1,8 +1,12 @@
 /*
  * kurtogram.c
  *
+ * This file contains function for signal processing used in Condition monitoring system.
+ * It provides calculation of crest factor, kurtosis ratio, RMS and fast compute of kurtogram.
+ *
+ *
  *  Created on: 20. 3. 2018
- *      Author: matula
+ *      Author: Martina Buricova
  */
 
 #include "stm32l0xx.h"
@@ -18,33 +22,43 @@
 #include <stdio.h>
 
 #define nlevel 4
-#define mocnina_dvou 16 		//2 na nlevel
+#define power_two 16 		//2 on the nlevel
 
-float K[nlevel+1][mocnina_dvou];
+float K[nlevel+1][power_two]; // matrix representation kurtogram
+
 int row_index_for_first_level = 0;
+float kurtosisOfSignal;
 
+static FLASH_EraseInitTypeDef EraseInitStruct;
+uint32_t Address_real = 0, PAGEError = 0, Address_imag = 0;
 
+// coefficients for filters
 const float h_real[17] = {-0.001873, 0.002176, 0.000000, 0.000000, 0.040902, 0.031603, -0.000000, 0.206738, 0.400330, 0.206738, 0.000000, 0.031603, 0.040902, 0.000000, -0.000000, 0.002176, -0.001873};
 const float h_imag[17] = { 0.000000, 0.002176, 0.010843, -0.000000, -0.000000, 0.031603, -0.081012, -0.206738, -0.000000, 0.206738, 0.081012, -0.031603, -0.000000, 0.000000, -0.010843, -0.002176, 0.000000};
 
 const float g_real[16] = {-0.002176, -0.000000, -0.000000, 0.040902, -0.031603, 0.000000, -0.206738, 0.400330, -0.206738, -0.000000, -0.031603, 0.040902, -0.000000, 0.000000, -0.002176, -0.001873};
 const float g_imag[16] = {0.002176, -0.010843, -0.000000, -0.000000, 0.031603, 0.081012, -0.206738, -0.000000, 0.206738, -0.081012, -0.031603, -0.000000, 0.000000, 0.010843, -0.002176, 0.000000};
 
-
+// private functions
 void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_imag, const float *f_real, const float *f_imag, int size, int size_filter, int first);
 void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int begin, int first);
-void insertSort(uint32_t *array, int left, int right);
-void quicksort(uint32_t *A, int l, int h);
 void shakerSort(uint32_t * array, int size);
 float kurtosis(uint32_t *x_real, uint32_t *x_imag, int size, int first);
 void maxK();
 
-const uint16_t testovaciDATA [] = {2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2074, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2075, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2074, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2071, 2074, 2073, 2072, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2071, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2071, 2072, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2071, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2071, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2071, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2074, 2073, 2072, 2073, 2073, 2073, 2075, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2074, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2071, 2073, 2073, 2073, 2073, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2074, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2071, 2073, 2073, 2072, 2071, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2075, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2074, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2074, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2074, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2072, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2071, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2071, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2075, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2071, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2071, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2073, 2072, 2072, 2073, 2074, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2074, 2072, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2074, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2071, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2074, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2070, 2072, 2072, 2074, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2074, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2072, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2071, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2072, 2072, 2073, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2073, 2074, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2072, 2073, 2072, 2073, 2073, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2071, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2072, 2072, 2073, 2072, 2072, 2072, 2072, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2072, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2072, 2071, 2072, 2073, 2073, 2072, 2073, 2073, 2073, 2073, 2072, 2072, 2073, 2072, 2073, 2073, 2073, 2073, 2073, 2073, 2073, 2072, 2073, 2073, 2073, 2072, 2072};
-
-float kurtosisOfSignal;
 
 
-uint32_t flash_address(int level, int begin, int what)
+/*
+ *  It provides initial flash address for array of numbers
+ *
+ *  inputs:
+ *          level: level of kurtogram
+ *          begin: x position in kurtogram
+ *          call: the number of calls in one pass
+
+ *  returns: initial address in flash memory
+ */
+uint32_t flash_address(int level, int begin, int call)
 {
 	uint32_t start = 1040 + (4-level)*128;
 
@@ -63,42 +77,56 @@ uint32_t flash_address(int level, int begin, int what)
 		begin = (begin*2);
 	}
 
-	start += begin*count + count*what;
+	start += begin*count + count*call;
 
-	//preteceni pole
+	//overflow
 	if(start > 1516)
 	{
 		begin = begin - 24;
-		start = 1040 + count*what + begin*count;
+		start = 1040 + count*call + begin*count;
 	}
 
 	return FLASH_BASE + FLASH_PAGE_SIZE * start;
 }
 
 
+/*
+ *  This function change number types from float to uint32_t
+ *
+ *  inputs:
+ *          n: number in float format
+ *
+ *  returns: number n as uint32_t
+ */
 uint32_t FloatToUint(float n)
 {
    return (uint32_t)(*(uint32_t*)&n);
 }
 
+
+/*
+ *  This function change number types from uint32_t to float
+ *
+ *  inputs:
+ *          n: number in uint32_t format
+ *
+ *  returns: number n as float
+ */
 float UintToFloat(uint32_t n)
 {
    return (float)(*(float*)&n);
 }
 
-/*void testData()
-{
-	int i =0;
 
-	while( i<sizeOfArray )
-	{
-		samples.test[i] = testovaciDATA[i];
-		i++;
-	}
-
-}*/
-
-
+/*
+ *  Counts the mean from array x
+ *
+ *  inputs:
+ *          x: array of numbers from which we want the average
+ *          size: size of array x
+ *
+ *  returns: average value
+ */
 float mean(uint32_t *x, int size)
 {
 	float result = 0;
@@ -111,85 +139,80 @@ float mean(uint32_t *x, int size)
 	return result/size;
 }
 
+
+/*
+ *  Pre-processing of data, change number type and normalization of data
+ */
 void normalization()
 {
-	/*for(int i=0;i<sizeOfArray+2;i++)
-	{
-		PRINTF("%"PRIu16", ", samples.adc_values[i]);
-	}*/
-
-	//testData();
 	for (int i=sizeOfArray+1; i >= 0; i--) {
-		samples.data[i] = FloatToUint(samples.adc_values[i]);//FloatToUint(samples.test[i]);//;
+		samples.data[i] = FloatToUint(samples.adc_values[i]);
 	}
 
+	// first two values are deleted
 	for(int i=0;i<sizeOfArray+2;i++)
 	{
 		samples.data[i] = samples.data[i+2];
 	}
 
-	/*for(int i=0;i<sizeOfArray;i++)
-	{
-		PRINTF("%f, ", UintToFloat(samples.data[i]));
-	}*/
-
+	// mean of data
 	float m = mean(samples.data, sizeOfArray);
 	PRINTF("mean: %.6f \n\r", m);
 
-	//normalizace
+	//normalization
 	for (int i = 0; i < sizeOfArray; i++) {
 		samples.data[i] = FloatToUint(UintToFloat(samples.data[i]) - m);
 	}
 }
 
+
+/*
+ *  Fast computation of kurtogram with maximum detection
+ */
 void kurtogram()
 {
-	//PRINTF("kurtogram\n\r");
-
-	//inicializace
+	//inicialization
 	row_index_for_first_level = 0;
-
+	uint32_t *samples_imag = 0;
 	for(int i=0;i<nlevel+1;i++)
 	{
-		for(int j=0;j<mocnina_dvou;j++)
+		for(int j=0;j<power_two;j++)
 		{
 			K[i][j] = 0;
 		}
 	}
 
-
-	uint32_t *samples_imag = 0;
-
-	//K_wpq_local
+	// recursive function for fast computation of kurtogram
 	kurt_local(samples.data, samples_imag, sizeOfArray, nlevel, 0, 1);
 
-	//printf
+	// printing the kurtogram
 	/*for(int i=0;i<nlevel+1;i++)
 	{
-		for(int j=0;j<mocnina_dvou;j++)
+		for(int j=0;j<power_two;j++)
 		{
 			PRINTF("%.6f ", K[i][j]);
 		}
 		PRINTF("\n\r");
 	}*/
 
+	// position of maximum of kurtogram
 	maxK();
-	//PRINTF("\n\r");
 	PRINTF("%d \n\r", index_i);
 	PRINTF("%d \n\r", index_j);
 	PRINTF("%.6f \n\r", index_m);
-
 }
 
 
-
+/*
+ *  Compute RMS and crest factor
+ */
 void compute_crest()
 {
+	//RMS
 	arm_rms_f32(samples.data, sizeOfArray, &rms);
-
 	PRINTF("rms: %.6f \n\r", rms);
 
-	// peak
+	// absolute value of peak
 	float max;
 	uint32_t indexMax;
 
@@ -217,38 +240,60 @@ void compute_crest()
 	}
 
 	PRINTF("peak: %.6f \n\r", peak);
-	// crest
+
+	// crest factor
 	crest = peak/rms;
 	PRINTF("crest: %.6f \n\r", crest);
 
 }
 
 
+/*
+ *  Compute kurtosis ratio
+ */
 void kurtosis_ratio()
 {
-	shakerSort(samples.data, sizeOfArray);
 	uint32_t *samples_imag = 0;
+
+	// sort array with data
+	shakerSort(samples.data, sizeOfArray);
+
 	float kurtosisOfTrimmedSignal = kurtosis(&samples.data[102], samples_imag, 1843, 1) +3;
 	PRINTF("trimmed: %.6f \n\r", kurtosisOfTrimmedSignal);
+
 	kurtosisOfSignal = kurtosis(&samples.data[0], samples_imag, sizeOfArray, 1) +3;
 	PRINTF("raw: %.6f \n\r", kurtosisOfSignal);
+
 	kr = kurtosisOfSignal/kurtosisOfTrimmedSignal;
 	PRINTF("kr: %.6f \n\r", kr);
 }
 
+
+/*
+ *  It sorts the first 102 and the last 102 numbers in array
+ *
+ *  inputs:
+ *          array: array to sort
+ *          size: size of array
+ */
 void shakerSort(uint32_t * array, int size) {
-    for (int i = 0; i < 103; i++) {
+    for (int i = 0; i < 103; i++)
+    {
         bool swapped = false;
-        for (int j = i; j < size - i - 1; j++) {
-            if (UintToFloat(array[j]) < UintToFloat(array[j+1])) {
+        for (int j = i; j < size - i - 1; j++)
+        {
+            if (UintToFloat(array[j]) < UintToFloat(array[j+1]))
+            {
             	uint32_t tmp = array[j];
                 array[j] = array[j+1];
                 array[j+1] = tmp;
                 swapped = true;
             }
         }
-        for (int j = size - 2 - i; j > i; j--) {
-            if (UintToFloat(array[j]) > UintToFloat(array[j-1])) {
+        for (int j = size - 2 - i; j > i; j--)
+        {
+            if (UintToFloat(array[j]) > UintToFloat(array[j-1]))
+            {
             	uint32_t tmp = array[j];
                 array[j] = array[j-1];
                 array[j-1] = tmp;
@@ -260,6 +305,17 @@ void shakerSort(uint32_t * array, int size) {
 }
 
 
+/*
+ *  Check if the array contains only zeros
+ *
+ *  inputs:
+ *          x: array of numbers
+ *          size: size of array
+ *
+ *  returns:
+ *          1 if array is empty
+ *          0 if array contains data different from zero
+ */
 int emptyArray(uint32_t *x, int size)
 {
 	for(int i=0;i<size;i++)
@@ -272,7 +328,18 @@ int emptyArray(uint32_t *x, int size)
 	return 1;
 }
 
-
+/*
+ *  This function computes spectral kurtosis from signal x
+ *
+ *  inputs:
+ *          x_real: array of real part of the numbers
+ *          x_imag: array of imaginary part of the numbers
+ *          size: size of arrays
+ *          first: first call means that x_imag contains only zeros values
+ *
+ *  returns: spectral kurtosis compute from x
+ *
+ */
 float kurtosis(uint32_t *x_real, uint32_t *x_imag, int size, int first)
 {
 	float kurtosis_value = 0;
@@ -310,7 +377,6 @@ float kurtosis(uint32_t *x_real, uint32_t *x_imag, int size, int first)
 		E += (x_real_temp*x_real_temp ) + (x_imag_temp*x_imag_temp );
 	}
 	E = E/size;
-	//PRINTF("E = %f  \n\r", E);
 	if (E < 0.00000001)
 	{
 		return 0;
@@ -331,21 +397,31 @@ float kurtosis(uint32_t *x_real, uint32_t *x_imag, int size, int first)
 	}
 
 	kurtosis_value = (kurtosis_value/size)/(E*E);
-	//PRINTF("K = %f  \n\r", kurtosis_value);
 
 	if (first == 1 || emptyArray(x_imag, size) == 1)
 	{
-		kurtosis_value = kurtosis_value - 3;
+		kurtosis_value = kurtosis_value - 3; // real numbers
 	}
 	else
 	{
-		kurtosis_value = kurtosis_value - 2;
+		kurtosis_value = kurtosis_value - 2; // imaginary numbers
 	}
 	return kurtosis_value;
 }
 
 
-
+/*
+ *  Recursive function for fast computation of kurtogram
+ *
+ *  inputs:
+ *          x_real: array of real part of the numbers
+ *          x_imag: array of imaginary part of the numbers
+ *          size: size of arrays
+ *          level: level of kurtogram
+ *          begin: start position in kurtogram for save kurtosis values
+ *          first: first call means that x_imag contains only zeros values
+ *
+ */
 void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int begin, int first)
 {
 	uint32_t *a_real;
@@ -354,22 +430,18 @@ void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int be
 	uint32_t *d_real;
 	uint32_t *d_imag;
 
+	// specify the initial address in flash memory
 	a_real = flash_address(level, begin, 0);
 	a_imag = flash_address(level, begin, 1);
 	d_real = flash_address(level, begin, 2);
 	d_imag = flash_address(level, begin, 3);
 
-
-	//PRINTF("----------------------------level = %d\n\r", level);
+    // binary decomposition
 	DBFB(a_real, a_imag, x_real, x_imag, h_real, h_imag, size, 17, first);
 	DBFB(d_real, d_imag, x_real, x_imag, g_real, g_imag, size, 16, first);
 
-
-
 	float K1 = kurtosis(&a_real[16], &a_imag[16], (size/2)-16, 0);
 	float K2 = kurtosis(&d_real[15], &d_imag[15], (size/2)-15, 0);
-	//PRINTF("k1 = %f\n\r", K1);
-	//PRINTF("k2 = %f\n\r", K2);
 
 	if (level == 1)
 	{
@@ -398,13 +470,13 @@ void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int be
 			K[nlevel-level+1][i] = K2;
 		}
 	}
-
+	// kurtosis of raw signal
 	if(level == nlevel)
 	{
 		K1 = kurtosis(x_real, x_imag, size, 1);
 		kurtosisOfSignal = K1;
 
-		for(int i=0;i<mocnina_dvou;i++)
+		for(int i=0;i<power_two;i++)
 		{
 			K[0][i] = K1;
 		}
@@ -413,10 +485,26 @@ void kurt_local(uint32_t *x_real, uint32_t *x_imag , int size, int level, int be
 }
 
 
-static FLASH_EraseInitTypeDef EraseInitStruct;
-uint32_t Address_real = 0, PAGEError = 0, Address_imag = 0;
-
-void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_imag, const float *f_real, const float *f_imag, int size, int size_filter, int first)
+/*
+ *  Double-band filter-bank (binary decomposition).
+ *  Computes array res, obtained by passing signal x through a fir filter f.
+ *
+ *  inputs:
+ *          x_real: array of real part of the signal
+ *          x_real: array of imaginary part of the signal
+ *          f_real: array of real part of constants of filter
+ *          f_imag: array of imag part of constants of filter
+ *          size: size of arrays res
+ *          size_filter: size of array with filters constants
+ *          first: first call means that x_imag contains only zeros values
+ *
+ *  returns:
+ *          res_real: array with real part of resulting data
+ *          res_imag: array with imag part of resulting data
+ *
+ */
+void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_imag, const float *f_real,
+		const float *f_imag, int size, int size_filter, int first)
 {
 	int index_start = -size_filter+1, index_end = 0, i_s;
 	int index_coef = 0;
@@ -426,29 +514,29 @@ void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_
 	float result_imag;
 	float x_imag_temp, x_real_temp;
 
-	//erase flash memory
+	//erase pages in flash memory
 	HAL_FLASH_Unlock();
 
 	EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
 	EraseInitStruct.PageAddress = res_real;
 	EraseInitStruct.NbPages     = ((size*2) / FLASH_PAGE_SIZE)+1; // (size/2)*4 byte
-
 	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError) != HAL_OK)
 	{
 		PRINTF("flash error Erase real\n\r");
 	}
 	Address_real = res_real;
 
+
 	EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
 	EraseInitStruct.PageAddress = res_imag;
 	EraseInitStruct.NbPages     = ((size*2) / FLASH_PAGE_SIZE)+1;
-
 	if (HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError) != HAL_OK)
 	{
 		PRINTF("flash error Erase imag\n\r");
 	}
 	Address_imag = res_imag;
 
+	// FIR filter
 	while(index_end<size)
 	{
 		if(save == 1)
@@ -487,6 +575,7 @@ void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_
 				result_imag = -result_imag;
 			}
 
+			// program flash memory with compute data
 			if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, Address_real, FloatToUint(result_real)) == HAL_OK)
 			{
 				Address_real = Address_real + 4;
@@ -522,14 +611,17 @@ void DBFB(uint32_t *res_real, uint32_t *res_imag, uint32_t *x_real, uint32_t *x_
 
 
 
-
+/*
+ *  This function finding maximum from kurtogram with its position
+ *
+ */
 void maxK()
 {
 	int maxI, maxJ;
 	float maxM = 0;
 	for(int i = 0; i < nlevel+1; i++)
 	{
-		for(int j = 0; j < mocnina_dvou; j++)
+		for(int j = 0; j < power_two; j++)
 		{
 			if(K[i][j] > maxM)
 			{
@@ -539,8 +631,10 @@ void maxK()
 			}
 		}
 	}
+	// position
 	index_i = maxI;
 	index_j = maxJ;
+	// maximum value
 	index_m = maxM;
 }
 

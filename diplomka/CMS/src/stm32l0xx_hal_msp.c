@@ -223,78 +223,85 @@ IRQn_Type MSP_GetIRQn( uint16_t GPIO_Pin)
     default: return EXTI4_15_IRQn;
   }
 }
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
 
+/************************* the following functions were added ***************************/
 
+/*
+ *  ADC inicialization with DMA peripherials
+ *
+ *  inputs:
+ *          hadc: ADC handler
+ *
+ */
 void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 {
 	GPIO_InitTypeDef          GPIO_InitStruct;
 
-
-	/*##-1- Enable peripherals and GPIO Clocks #################################*/
-	/* Enable GPIO clock ****************************************/
+	//Enable GPIO clock
 	__HAL_RCC_GPIOA_CLK_ENABLE();
-	/* ADC1 Periph clock enable */
+	// ADC1 Periph clock enable
 	__HAL_RCC_ADC1_CLK_ENABLE();
-	/* Enable DMA1 clock */
+	// Enable DMA1 clock
 	__HAL_RCC_DMA1_CLK_ENABLE();
 
-	/*##- 2- Configure peripheral GPIO #########################################*/
-	/* ADC Channel GPIO pin configuration */
+	// Configure peripheral GPIO
 	GPIO_InitStruct.Pin = GPIO_PIN_1;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	/*##- 3- Configure DMA #####################################################*/
 
-	/*********************** Configure DMA parameters ***************************/
+
+	// Configure DMA parameters
 	DmaHandle.Instance                 = DMA1_Channel1;
 	DmaHandle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
 	DmaHandle.Init.PeriphInc           = DMA_PINC_DISABLE;
 	DmaHandle.Init.MemInc              = DMA_MINC_ENABLE;
 	DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	DmaHandle.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-	DmaHandle.Init.Mode                = DMA_NORMAL; //DMA_CIRCULAR;
-	DmaHandle.Init.Priority            = DMA_PRIORITY_HIGH; //DMA_PRIORITY_MEDIUM;
+	DmaHandle.Init.Mode                = DMA_NORMAL;
+	DmaHandle.Init.Priority            = DMA_PRIORITY_HIGH;
 	DmaHandle.Init.Request             = DMA_REQUEST_0;
-	/* Deinitialize  & Initialize the DMA for new transfer */
+
+	// Deinitialize  & Initialize the DMA for new transfer
 	HAL_DMA_DeInit(&DmaHandle);
 	HAL_DMA_Init(&DmaHandle);
 
-	/* Associate the DMA handle */
+	// Associate the DMA handle
 	__HAL_LINKDMA(hadc, DMA_Handle, DmaHandle);
 
-	/* NVIC configuration for DMA Input data interrupt */
+	// set priority for DMA transfer
 	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-
 }
 
+
+/*
+ *  ADC de-inicialization
+ *
+ *  inputs:
+ *          hadc: ADC handler
+ *
+ */
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 {
 
   if(hadc->Instance==ADC1)
   {
-  /* USER CODE BEGIN ADC1_MspDeInit 0 */
-
-  /* USER CODE END ADC1_MspDeInit 0 */
-    /* Peripheral clock disable */
+    // Peripheral clock disable
     __HAL_RCC_ADC1_CLK_DISABLE();
 
-    /**ADC GPIO Configuration
-    PA0     ------> ADC_IN0
-    */
+
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1);
-
-  /* USER CODE BEGIN ADC1_MspDeInit 1 */
-
-  /* USER CODE END ADC1_MspDeInit 1 */
   }
 
 }
 
-/* TIM2 init function */
+
+/*
+ *  Timer configuration and inicialization
+ */
 void MX_TIM2_Init(void)
 {
   TIM_ClockConfigTypeDef sClockSourceConfig;
@@ -322,40 +329,36 @@ void MX_TIM2_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
-
 }
 
+
+/*
+ *  clock enable and set priority for timer
+ */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
 {
 
-  if(tim_baseHandle->Instance==TIM2)
-  {
-  /* USER CODE BEGIN TIM2_MspInit 0 */
+	if(tim_baseHandle->Instance==TIM2)
+	{
+		// TIM2 clock enable
+		__HAL_RCC_TIM2_CLK_ENABLE();
 
-  /* USER CODE END TIM2_MspInit 0 */
-    /* TIM2 clock enable */
-    __HAL_RCC_TIM2_CLK_ENABLE();
-  /* USER CODE BEGIN TIM2_MspInit 1 */
-
-    HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(TIM2_IRQn);
-  /* USER CODE END TIM2_MspInit 1 */
-  }
+		HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);
+		HAL_NVIC_EnableIRQ(TIM2_IRQn);
+	}
 }
 
+
+/*
+ *  de-inicialization of timer
+ */
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 {
 
-  if(tim_baseHandle->Instance==TIM2)
-  {
-  /* USER CODE BEGIN TIM2_MspDeInit 0 */
-
-  /* USER CODE END TIM2_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_TIM2_CLK_DISABLE();
-  /* USER CODE BEGIN TIM2_MspDeInit 1 */
-
-  /* USER CODE END TIM2_MspDeInit 1 */
-  }
+	if(tim_baseHandle->Instance==TIM2)
+	{
+		// Peripheral clock disable
+		__HAL_RCC_TIM2_CLK_DISABLE();
+	}
 }
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

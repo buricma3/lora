@@ -1,3 +1,11 @@
+/*
+ * kurtogram.h
+ *
+ *
+ *  Created on: 20. 3. 2018
+ *      Author: Martina Buricova
+ */
+
 
 #include <stdint.h>
 #include <string.h>
@@ -12,10 +20,9 @@ float crest;
 float kr;
 
 
-
+//union for sampled data
 union {
 	uint16_t adc_values[2050];
-	//uint16_t test[sizeOfArray];
 	uint32_t data[sizeOfArray+2];
 } samples;
 

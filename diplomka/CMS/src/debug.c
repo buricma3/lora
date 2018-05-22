@@ -57,9 +57,9 @@
   */
 void Error_Handler(void)
 {
-	  PRINTF("error\n\r");
-  DBG_PRINTF("Error_Handler\n\r");
-  while(1);
+	PRINTF("error\n\r");
+	DBG_PRINTF("Error_Handler\n\r");
+	while(1);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

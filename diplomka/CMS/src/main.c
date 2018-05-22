@@ -1,12 +1,12 @@
-/**
-  ******************************************************************************
-  * @file    main.c
-  * @author  Ac6
-  * @version V1.0
-  * @date    01-December-2013
-  * @brief   Default main function.
-  ******************************************************************************
-*/
+/*
+ * kurtogram.c
+ *
+ * Main file for Condition monitoring system.
+ *
+ *
+ *  Created on: 17. 1. 2018
+ *      Author: Martina Buricova
+ */
 
 
 #include "stm32l0xx.h"
@@ -23,17 +23,20 @@
 #include <string.h>
 
 
-static TimerEvent_t MeasurementStartTimer;
+static TimerEvent_t              MeasurementStartTimer;
 ADC_HandleTypeDef 				 hadc;
 extern DMA_HandleTypeDef         DmaHandle;
-extern TIM_HandleTypeDef 		  htim2;
+extern TIM_HandleTypeDef 		 htim2;
 
+volatile bool dma_done = false;
 
-#define MEAS_INTERVAL_MS							( 1*10*1000) //every 3*60 second 3 minute
+#define MEAS_INTERVAL_MS							( 1*10*1000) // 10 seconds
+
+// constants for LoRa interface
+
 #define LPP_APP_PORT 99
-
 /*!
- * Defines the application data transmission duty cycle. 4 min, value in [ms].
+ * Defines the application data transmission duty cycle. 5 min, value in [ms].
  */
 #define APP_TX_DUTYCYCLE                           5 * 60 * 1000
 /*!
@@ -55,17 +58,13 @@ extern TIM_HandleTypeDef 		  htim2;
  */
 #define JOINREQ_NBTRIALS                            3
 
-/* Private macro -------------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
+
 static void MX_ADC_Init(void);
 /* call back when LoRa will transmit a frame*/
 static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed);
 /* call back when LoRa has received a frame*/
 static void LoraRxData( lora_AppData_t *AppData);
 
-//void flash_test();
-
-/* Private variables ---------------------------------------------------------*/
 /* load call backs*/
 static LoRaMainCallback_t LoRaMainCallbacks ={ HW_GetBatteryLevel,
                                                HW_GetUniqueId,
@@ -74,8 +73,8 @@ static LoRaMainCallback_t LoRaMainCallbacks ={ HW_GetBatteryLevel,
                                                LoraRxData};
 
 
-/* !
- *Initialises the Lora Parameters
+/*
+ *  Initialises the Lora Parameters
  */
 static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
 									APP_TX_DUTYCYCLE,
@@ -87,26 +86,32 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
 
 
 
-volatile bool dma_done = false;
-
+/*
+ *  This function is called when DMA transmission is complete
+ *
+ *  inputs:
+ *          dh: DMA handler
+ *
+ */
 static void done_cb(DMA_HandleTypeDef* dh)
 {
 	dma_done = true;
-	//PRINTF("dma handler\n\r");
-
 }
 
+
+/*
+ *  This function is called on timer interrupt.
+ *  It starts measuring and calculates sign
+ *
+ */
 static void MeasurementStartTimerIrq(void)
 {
-
 	GPIOC->BSRR = 1<<7;
 	dma_done = false;
-
 	PRINTF("measure\n\r");
-	//TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
-	//TimerReset(&MeasurementStartTimer);
-
 	HAL_Delay(200);
+
+	// start DMA transfer
 	if (HAL_ADC_Start_DMA(&hadc, (void*)samples.adc_values, 2050) != HAL_OK)
 	{
 		Error_Handler();
@@ -116,9 +121,10 @@ static void MeasurementStartTimerIrq(void)
 
 
 	while(!dma_done) {
-		HAL_Delay(100);
+		HAL_Delay(100); // waiting until DMA transmission is complete
 	}
 
+	// signal processing
 	normalization();
 	kurtogram();
 	compute_crest();
@@ -126,26 +132,22 @@ static void MeasurementStartTimerIrq(void)
 
 	PRINTF("measure done \n\r\n\r");
 	GPIOC->BRR = 1<<7;
-
-
 }
 
 
 int main(void)
 {
-
+    // inisialiyation of monitoring system
 	HAL_Init( );
 	SystemClock_Config( );
-
-	/* Configure the hardware*/
 	HW_Init( );
 	MX_ADC_Init();
+	lora_Init( &LoRaMainCallbacks, &LoRaParamInit); // Configure the Lora Stack
 
-	/* Configure the Lora Stack*/
-	lora_Init( &LoRaMainCallbacks, &LoRaParamInit);
-
+	// first measuring at start
 	MeasurementStartTimerIrq();
 
+    // set timer for measure
 	TimerInit( &MeasurementStartTimer, MeasurementStartTimerIrq );
 	TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
 	TimerStart( &MeasurementStartTimer );
@@ -153,10 +155,10 @@ int main(void)
 
 	PRINTF("START\n\r");
 
-	  /* main loop*/
+	// infinite loop
 	while( 1 )
 	{
-	    // run the LoRa class A state machine
+	    // LoRa class A state machine
 	    lora_fsm( );
 
 	    DISABLE_IRQ( );
@@ -172,7 +174,11 @@ int main(void)
 	  }
 }
 
-static void MX_ADC_Init(void)// 21739 Hz
+
+/*
+ *  Configuration of Analog to digital converter.
+ */
+static void MX_ADC_Init(void)
 {
 
 	hadc.Instance = ADC1;
@@ -197,35 +203,42 @@ static void MX_ADC_Init(void)// 21739 Hz
 	hadc.Init.OversamplingMode      = DISABLE;
 
 
-	  // Initialize ADC peripheral according to the passed parameters
-	  if (HAL_ADC_Init(&hadc) != HAL_OK)
-	  {
+	// Initialize ADC peripheral according to the passed parameters
+	if (HAL_ADC_Init(&hadc) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+
+	// Start calibration
+	if (HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) !=  HAL_OK)
+	{
 	    Error_Handler();
-	  }
+	}
 
-
-	  // ### - 2 - Start calibration ############################################
-	  if (HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) !=  HAL_OK)
-	  {
+	// Channel configuration
+	ADC_ChannelConfTypeDef sConfig;
+	sConfig.Channel      = ADC_CHANNEL_1;               // Channel to be converted
+	sConfig.Rank         = ADC_RANK_CHANNEL_NUMBER;
+	if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+	{
 	    Error_Handler();
-	  }
-
-	  // ### - 3 - Channel configuration ########################################
-	  ADC_ChannelConfTypeDef sConfig;
-	  sConfig.Channel      = ADC_CHANNEL_1;               // Channel to be converted
-	  sConfig.Rank         = ADC_RANK_CHANNEL_NUMBER;
-	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-
-
+	}
 }
 
+
+/*
+ *  Prepare data frame for transfer over LoRa interface
+ *
+ *  inputs:
+ *           AppData: structure for sending
+ *           IsTxConfirmed:
+ */
 static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 {
 	uint32_t i = 0;
 
+	// reset timer
     TimerSetValue( &MeasurementStartTimer, MEAS_INTERVAL_MS );
     TimerReset(&MeasurementStartTimer);
 
@@ -233,12 +246,13 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
 
     *IsTxConfirmed =  LORAWAN_CONFIRMED_MSG;
 
-
+    // change type computes value from float to uint32
     uint32_t maxKurt = FloatToUint(index_m);
     uint32_t rms_send = FloatToUint(rms);
     uint32_t crest_send = FloatToUint(crest);
     uint32_t kr_send = FloatToUint(kr);
 
+    // set bytes in buffer
     AppData->Buff[i++] = index_i;
     AppData->Buff[i++] = index_j;
     AppData->Buff[i++] = maxKurt;
